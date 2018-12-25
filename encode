@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+#	wifiqrcode - Generate Wi-Fi QR code
+#	Copyright (C) 2018-2018 Johannes Bauer
+#
+#	This file is part of wifiqrcode.
+#
+#	wifiqrcode is free software; you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation; this program is ONLY licensed under
+#	version 3 of the License, later versions are explicitly excluded.
+#
+#	wifiqrcode is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with wifiqrcode; if not, write to the Free Software
+#	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#	Johannes Bauer <JohannesBauer@gmx.de>
+
+import subprocess
+import tempfile
+import os
+import datetime
+import sys
+import re
+
+def readable(text):
+	chunksize = 4
+	return " ".join(text[i : i + chunksize] for i in range(0, len(text), chunksize))
+
+essid = input("ESSID: ")
+psk = input("PSK  : ")
+params = {
+	"essid":		essid,
+	"encryption":	"WPA",
+	"psk":			psk,
+}
+string = "WIFI:S:%(essid)s;T:%(encryption)s;P:%(psk)s;;" % params
+outfile = "WLAN_%s.pdf" % (params["essid"])
+if os.path.isfile(outfile):
+	yn = input("Output file %s already exists. Overwrite (y/n)? " % (outfile))
+	if yn.lower() != "y":
+		print("Aborted.")
+		sys.exit(1)
+
+with open("template.svg") as f:
+	svg = f.read()
+svg = svg.replace("$ESSID$", params["essid"])
+svg = svg.replace("$PSK$", readable(params["psk"]))
+svg = svg.replace("$DATETIME$", datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+with tempfile.NamedTemporaryFile(mode = "w", suffix = ".svg", prefix = "qrcode_") as svgfile, tempfile.NamedTemporaryFile(suffix = ".svg", prefix = "qrcode_") as qrfile:
+	subprocess.check_call([ "qrencode", "-o", qrfile.name, "-t", "SVG", "-l", "H", "--background", "abcdef", string ])
+	elements = [ ]
+	with open(qrfile.name) as f:
+		for line in f:
+			line = line.strip()
+			if "fill=\"#abcdef\"" in line:
+				match = re.search(r"width=\"(?P<width>\d+)\"", line).groupdict()
+				width = int(match["width"])
+			elif line.startswith("<rect"):
+				elements.append(line)
+	qr = "".join(elements)
+	
+	scale = 74 / width
+	svg = svg.replace("$SCALE$", str(scale))
+	svg = svg.replace("<!-- INNER -->", qr)
+	svgfile.write(svg)
+	svgfile.flush()
+
+	subprocess.check_call([ "inkscape", "-A", outfile, svgfile.name ])
