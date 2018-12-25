@@ -31,14 +31,19 @@ def readable(text):
 	chunksize = 4
 	return " ".join(text[i : i + chunksize] for i in range(0, len(text), chunksize))
 
-essid = input("ESSID: ")
-psk = input("PSK  : ")
+essid = input("ESSID     : ")
+psk = input("PSK       : ")
+hidden = input("Hidden (y/n): ")
 params = {
 	"essid":		essid,
 	"encryption":	"WPA",
 	"psk":			psk,
 }
-string = "WIFI:S:%(essid)s;T:%(encryption)s;P:%(psk)s;;" % params
+string = "WIFI:T:%(encryption)s;S:%(essid)s;P:%(psk)s;" % params
+if hidden.lower() in "yY":
+	string += "H:true;"
+else:
+	string += ";"
 outfile = "WLAN_%s.pdf" % (params["essid"])
 if os.path.isfile(outfile):
 	yn = input("Output file %s already exists. Overwrite (y/n)? " % (outfile))
