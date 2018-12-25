@@ -42,8 +42,7 @@ params = {
 string = "WIFI:T:%(encryption)s;S:%(essid)s;P:%(psk)s;" % params
 if hidden.lower() in "yY":
 	string += "H:true;"
-else:
-	string += ";"
+string += ";"
 outfile = "WLAN_%s.pdf" % (params["essid"])
 if os.path.isfile(outfile):
 	yn = input("Output file %s already exists. Overwrite (y/n)? " % (outfile))
