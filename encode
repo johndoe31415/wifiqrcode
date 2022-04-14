@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #	wifiqrcode - Generate Wi-Fi QR code
-#	Copyright (C) 2018-2018 Johannes Bauer
+#	Copyright (C) 2018-2022 Johannes Bauer
 #
 #	This file is part of wifiqrcode.
 #
@@ -68,11 +68,11 @@ with tempfile.NamedTemporaryFile(mode = "w", suffix = ".svg", prefix = "qrcode_"
 			elif line.startswith("<rect"):
 				elements.append(line)
 	qr = "".join(elements)
-	
+
 	scale = 74 / width
 	svg = svg.replace("$SCALE$", str(scale))
 	svg = svg.replace("<!-- INNER -->", qr)
 	svgfile.write(svg)
 	svgfile.flush()
 
-	subprocess.check_call([ "inkscape", "-A", outfile, svgfile.name ])
+	subprocess.check_call([ "inkscape", "-o", outfile, svgfile.name ])
